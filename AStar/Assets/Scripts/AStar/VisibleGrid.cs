@@ -1,5 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Pathfinding
@@ -24,8 +26,8 @@ namespace Pathfinding
 
 
         // grid node container private
-        public Node[,,] grid;
-
+        public Node[,,] grid = null;
+     
 
         [SerializeField] private GameObject gridRepresentation;
 
@@ -44,13 +46,30 @@ namespace Pathfinding
 
         // Start is called before the first frame update
         void Start()
-        {
+        {            
             CreateGrid();
         }
 
-        public int MaxSize {get => x * y * z;}
-        private void CreateGrid()
+        private void ClearGrid()
         {
+            if(transform.childCount > 0)
+            {
+                foreach (var child in transform.Cast<Transform>().Reverse())
+                Destroy(child.gameObject);
+            }
+
+            if(grid != null && grid.Length >0)
+            {
+                Array.Clear(grid, 0, grid.Length);
+            }
+        }
+
+        public int MaxSize {get => x * y * z;}
+        public void CreateGrid()
+        {
+            DestroyGridInEditor();
+            ClearGrid();
+
             grid = new Node[x, y, z];
             Vector3 gridElementSize = gridRepresentation.GetComponent<Renderer>().bounds.size;
 
@@ -86,6 +105,14 @@ namespace Pathfinding
                     }
                 }
             }
+        }
+
+        public void DestroyGridInEditor()
+        {
+#if UNITY_EDITOR
+            foreach (var child in transform.Cast<Transform>().Reverse())
+                DestroyImmediate(child.gameObject);
+#endif
         }
         #endregion
 
@@ -126,11 +153,8 @@ namespace Pathfinding
         {   
             if (debugVisualization)
             {   
-                debugVisualization = false;             
-                
-                // simple test lul, you can set as many nodes unwalkable as you like
-                // grid[1,0,1].isWalkable = false;
-
+                debugVisualization = false;          
+                              
                 Node start = GetNodeFromPosition(startNodePos);
                 Node target = GetNodeFromPosition(targetNodePos);
                                 
